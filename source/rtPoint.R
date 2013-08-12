@@ -79,3 +79,9 @@ setkey(identified, l_lcrunid)
 countsLC <- unique(identified)
 nbLCPerProject <- table(countsLC[, l_projectid])
 nbLCPerProject
+
+
+subs_id <- identified[rank_peptide==555 & l_instrumentid == 10 & N < 6 & rtsec < 3000]
+
+plot_rt <- ggplot(subs_id, aes(rtsec))
+plot_rt + geom_density()
