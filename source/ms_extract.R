@@ -8,13 +8,67 @@ library(data.table);
 
 con <- dbConnect(MySQL(), group="MSDB", dbname="projects");
 
-rt_project2m0 <- data.table(dbGetQuery(con,
-                                     "SELECT scanid, number, spectrumid, l_lcrunid, l_projectid, l_instrumentid, identified, score, identitythreshold, confidence, DB,
+sampleExtract <- function(saveName, projectStart, projectEnd, ...){
+  projectPath <- "C:/Users/Nicolas Housset/Documents/RetentionTimeAnalysis";
+  # Beginning of the SQL statement which contains the variable we want to extract
+  varSQL <- "\"SELECT scanid, number, spectrumid, l_lcrunid, l_projectid, l_instrumentid, l_protocolid, l_userid, identified, score, identitythreshold, confidence, DB,
 rtsec, total_spectrum_intensity, mass_to_charge, spectrum.charge, accession, start, end, sequence, modified_sequence FROM
 (spectrum LEFT JOIN scan ON spectrum.spectrumid = scan.l_spectrumid 
 LEFT JOIN identification ON spectrum.spectrumid = identification.l_spectrumid
-LEFT JOIN spectrum_file ON spectrum.spectrumid = spectrum_file.l_spectrumid)
-WHERE l_projectid BETWEEN 2000 AND 2100 AND l_instrumentid BETWEEN 8 AND 14;"));
+RIGHT JOIN project ON spectrum.l_projectid = project.projectid) 
+WHERE l_projectid BETWEEN ";
+  varSQL <- paste0(saveName,
+                   " <- data.table(dbGetQuery(con,",
+                   varSQL, projectStart, " AND ", projectEnd, " AND l_instrumentid BETWEEN 8 AND 14;\"))");
+  
+  # print(varSQL);
+  eval(parse(text=varSQL));
+  saveText <- paste0("save(",saveName, ", file = \"", projectPath, "/data/", saveName, ".RData\", compression_level = 1)");
+  # print(saveText);
+  eval(parse(text=saveText));
+  return(NULL);
+}
+
+# From project 1501, extract and save in chunks of 100 projects
+start <- 1500
+for(i in 1:15){
+  start <- start + 1
+  end <- start + 99
+  stringExpression <- paste0("sampleExtract(\"rt_project_part", i, "\", \"", start, "\", \"", end, "\")")
+  start <- end
+  print(stringExpression)
+  eval(parse(text=stringExpression))
+}
+
+# Our database is divided into parts, we build step by step the identified peptides database
+identified <- data.table(NULL)
+projectPath <- "C:/Users/Nicolas Housset/Documents/RetentionTimeAnalysis"
+for(i in 1:15){
+  stringExpression <- paste0("load(file = \"", projectPath, "/data/rt_project_part", i, ".RData\")" )
+  # print(stringExpression)
+  eval(parse(text=stringExpression))
+  stringExpression <- paste0("identified <- rbind(identified,rt_project_part", i, "[(!is.na(modified_sequence))])")
+  # print(stringExpression)
+  eval(parse(text=stringExpression))
+  stringExpression <- paste0("rm(rt_project_part", i, ")")
+  # print(stringExpression)
+  eval(parse(text=stringExpression))
+}
+save(identified, file = "C:/Users/Nicolas Housset/Documents/RetentionTimeAnalysis/data/identified.RData", compression_level = 1)
+
+
+#
+#
+#
+#
+# From there, do not run, previous code
+rt_project2m0 <- data.table(dbGetQuery(con,
+                                       "SELECT scanid, number, spectrumid, l_lcrunid, l_projectid, l_instrumentid, identified, score, identitythreshold, confidence, DB,
+rtsec, total_spectrum_intensity, mass_to_charge, spectrum.charge, accession, start, end, sequence, modified_sequence FROM
+(spectrum LEFT JOIN scan ON spectrum.spectrumid = scan.l_spectrumid 
+                                       LEFT JOIN identification ON spectrum.spectrumid = identification.l_spectrumid
+                                       LEFT JOIN spectrum_file ON spectrum.spectrumid = spectrum_file.l_spectrumid)
+                                       WHERE l_projectid BETWEEN 2101 AND 2200 AND l_instrumentid BETWEEN 8 AND 14;"));
 
 identified <- rt_project2m0[(!is.na(modified_sequence))]
 
