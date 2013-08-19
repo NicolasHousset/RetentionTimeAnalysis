@@ -30,8 +30,8 @@ id_10 <- id_10[rtsecMax < 3001]
 setkey(id_10, l_projectid, modified_sequence)
 countsPerProject <- unique(id_10)
 countsPerProject[, modified_sequence.f := factor(modified_sequence)]
-nbProjPerPeptide <- summary(countsPerProject[, modified_sequence.f], maxsum = 500000)
-# 270992 peptides for instrument 10
+nbProjPerPeptide <- summary(countsPerProject[, modified_sequence.f], maxsum = 1000000)
+# 424951 peptides for instrument 10
 
 # Create an alphabetical-based index
 id_peptide <- 1:NROW(nbProjPerPeptide)
@@ -52,7 +52,7 @@ setkey(id_10, l_projectid, accession)
 protsPerProject <- unique(id_10)
 protsPerProject[, accession.f := factor(accession)]
 nbProjPerProtein <- summary(protsPerProject[, accession.f], maxsum = 500000)
-# 25165 proteins for the instrument 10
+# 35989 proteins for the instrument 10
 
 # Create an alphabetical-based index
 id_protein <- 1:NROW(nbProjPerProtein)
@@ -121,7 +121,7 @@ setkey(id_10_subs, l_lcrunid, modified_sequence, rtsec)
 setkey(id_10_subs, l_lcrunid, modified_sequence)
 
 write.csv(id_10_subs, file = paste0(projectPath,"/data/id_10_sample.csv"))
-
+save(id_10_subs, file = "C:/Users/Nicolas Housset/Documents/RetentionTimeAnalysis/data/id_10_subs.RData", compression_level = 1)
 
 
 
