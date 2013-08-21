@@ -1,4 +1,4 @@
-# The purpose of this script is to extract relevant information concerning projects with id between 2000 and 3000.
+# The purpose of this script is to extract relevant information concerning projects with id between 1500 and 3000.
 # Reason behind this range of numbers is that projects are recent
 # Projects are extracted by chunks of 100 to avoid overloading the RAM
 # A db of identified peptides is built step by step
@@ -8,11 +8,12 @@ library(data.table);
 
 con <- dbConnect(MySQL(), group="MSDB", dbname="projects");
 
+# Since it is a function the data.table will be created in the environment of the function
 sampleExtract <- function(saveName, projectStart, projectEnd, ...){
   projectPath <- "C:/Users/Nicolas Housset/Documents/RetentionTimeAnalysis";
   # Beginning of the SQL statement which contains the variable we want to extract
   varSQL <- "\"SELECT scanid, number, spectrumid, l_lcrunid, l_projectid, l_instrumentid, l_protocolid, l_userid, identified, score, identitythreshold, confidence, DB,
-rtsec, total_spectrum_intensity, mass_to_charge, spectrum.charge, accession, start, end, sequence, modified_sequence FROM
+rtsec, total_spectrum_intensity, mass_to_charge, spectrum.charge, accession, start, end, sequence, modified_sequence, identification.description FROM
 (spectrum LEFT JOIN scan ON spectrum.spectrumid = scan.l_spectrumid 
 LEFT JOIN identification ON spectrum.spectrumid = identification.l_spectrumid
 RIGHT JOIN project ON spectrum.l_projectid = project.projectid) 
