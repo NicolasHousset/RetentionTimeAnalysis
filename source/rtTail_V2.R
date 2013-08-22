@@ -21,11 +21,11 @@ identified <- identified[rtsecMax < 3001]
 
 # The "most common peptide" notion is here project-based.
 setkey(identified, l_projectid, modified_sequence)
-countsPerProject <- unique(identified)
+countsPerProject <- unique(identified)[, list(l_projectid,modified_sequence)]
 countsPerProject[, modified_sequence.f := factor(modified_sequence)]
 nbProjPerPeptide <- summary(countsPerProject[, modified_sequence.f], maxsum = 1000000)
 rm(countsPerProject)
-# 675331 peptides
+# 677930 peptides (21/08/2013)
 
 # Create an alphabetical-based index
 id_peptide <- 1:NROW(nbProjPerPeptide)
@@ -43,11 +43,11 @@ identified <- identified[dt]
 
 # We repeat this part on the protein level
 setkey(identified, l_projectid, accession)
-protsPerProject <- unique(identified)
+protsPerProject <- unique(identified)[, list(l_projectid, accession)]
 protsPerProject[, accession.f := factor(accession)]
 nbProjPerProtein <- summary(protsPerProject[, accession.f], maxsum = 500000)
 rm(protsPerProject)
-# 35989 proteins for the instrument 10
+# 54402 proteins (21/08/2013)
 
 # Create an alphabetical-based index
 id_protein <- 1:NROW(nbProjPerProtein)
@@ -88,6 +88,7 @@ identified_subs[, min_1 := quantile(rtsec, probs = 0.0), by = c("l_instrumentid"
 identified_subs[, q975_1 := quantile(rtsec, probs = 0.975), by = c("l_instrumentid", "modified_sequence")]
 identified_subs[, q025_1 := quantile(rtsec, probs = 0.025), by = c("l_instrumentid", "modified_sequence")]
 identified_subs[, q75_1 := quantile(rtsec, probs = 0.75), by = c("l_instrumentid", "modified_sequence")]
+identified_subs[, q50_1 := quantile(rtsec, probs = 0.50), by = c("l_instrumentid", "modified_sequence")]
 identified_subs[, q25_1 := quantile(rtsec, probs = 0.25), by = c("l_instrumentid", "modified_sequence")]
 identified_subs[, wid100_1 := max_1 - min_1]
 identified_subs[, wid95_1 := q975_1 - q025_1]
@@ -102,6 +103,7 @@ identified_subs[index_rt2 <5, min_2 := quantile(rtsec, probs = 0.0), by = c("l_i
 identified_subs[index_rt2 <5, q975_2 := quantile(rtsec, probs = 0.975), by = c("l_instrumentid", "modified_sequence")]
 identified_subs[index_rt2 <5, q025_2 := quantile(rtsec, probs = 0.025), by = c("l_instrumentid", "modified_sequence")]
 identified_subs[index_rt2 <5, q75_2 := quantile(rtsec, probs = 0.75), by = c("l_instrumentid", "modified_sequence")]
+identified_subs[index_rt2 <5, q50_2 := quantile(rtsec, probs = 0.50), by = c("l_instrumentid", "modified_sequence")]
 identified_subs[index_rt2 <5, q25_2 := quantile(rtsec, probs = 0.25), by = c("l_instrumentid", "modified_sequence")]
 identified_subs[index_rt2 <5, wid100_2 := max_2 - min_2]
 identified_subs[index_rt2 <5, wid95_2 := q975_2 - q025_2]
