@@ -78,7 +78,8 @@ identified[, grpLC := (as.numeric(l_lcrunid) > 88555)]
 
 table(identified[, grpLC])
 
-test <- identified[index_rt2 == 1][, nbId := .N, by = c("grpLC", "modified_sequence")]
+test <- identified[, nbId := .N * (index_rt2 == 1), by = c("grpLC", "modified_sequence")]
+test <- identified[, nbId := .N, by = c("grpLC", "modified_sequence")]
 
 table(test[, nbId, by = grpLC])
 
