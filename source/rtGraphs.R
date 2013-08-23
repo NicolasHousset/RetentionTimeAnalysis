@@ -4,7 +4,7 @@ library(data.table)
 library(ggplot2)
 
 library(RMySQL);
-con <- dbConnect(MySQL(), user="nicolas", password="nicolas,13*", dbname="projects", host="muppet03.ugent.be");
+con <- dbConnect(MySQL(), group="MSDB", dbname="projects");
 
 # Selecting relevant information from the database
 # Selection criteria are project numbers (to avoid huge database) and orbitrap instruments (id between 8 and 10)
