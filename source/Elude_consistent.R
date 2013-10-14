@@ -8,11 +8,21 @@ projectPath <- "C:/Users/Nicolas Housset/Documents/RetentionTimeAnalysis"
 
 load(file = paste0(projectPath,"/data/identified_protocol.RData"))
 setkey(identified_subs, modified_sequence)
-rtPeptide <- identified_subs[nbProjPepProtocol11 > 4][, list(l_projectid, l_lcrunid, modified_sequence, index_rt2, l_protocolid, grpProj, rtsec, q50_2)]
+rtPeptide <- identified_subs[nbProjPepProtocol11 > 4][, list(l_projectid, l_lcrunid, sequence, modified_sequence, index_rt2, l_protocolid, grpProj, rtsec, q50_2)]
 rtPeptide <- rtPeptide[l_protocolid=='11'][grpProj==2]
 setkey(rtPeptide, modified_sequence)
-rtPepUnique <- unique(rtPeptide)
+rtPepUnique <- unique(rtPeptide)[,list(sequence, modified_sequence, q50_2)]
 
+table(identified_subs[l_protocolid=='11'][grpProj==2][, l_projectid])
+
+
+setkey(identified_subs, l_lcrunid)
+test <- identified_subs[as.character(93683:93706)][, list(l_projectid, l_lcrunid, sequence, modified_sequence, index_rt2, l_protocolid, grpProj, rtsec, q50_2)]
+ggplot(test, aes(q50_2)) + geom_histogram(binwidth=40)
+
+test[,quantile(rtsec, probs = 0.05),by = l_lcrunid]
+test[,quantile(rtsec, probs = 0.95),by = l_lcrunid]
+test[,quantile(rtsec, probs = 0.50),by = l_lcrunid]
 
 # Yes, I want to get the modifications. And this is complicated.
 
@@ -59,16 +69,17 @@ rtPepUnique[, mod4 := as.character(lapply(listmod, "[[", 4))]
 rtPepUnique[, modN := as.character(lapply(listmodN, "[[", 1))]
 rtPepUnique[, modC := as.character(lapply(listmodC, "[[", 1))]
 
-setkey(rtPepUnique, modified_sequence)
-setkey(rtPeptide, modified_sequence)
+setkey(rtPepUnique, sequence, modified_sequence)
+setkey(rtPeptide, sequence, modified_sequence)
 rtPeptide <- rtPepUnique[rtPeptide]
 
 # Set some condition
-rtPeptide <- rtPeptide[mod2==""]
-rtPeptide <- rtPeptide[mod1=="" | mod1=="K<prop>" | mod1=="K<propC13>"]
+rtPeptide <- rtPeptide[mod1=="" & modN=="NH2-" & modC=="-COOH"]
+# rtPeptide <- rtPeptide[mod1=="" | mod1=="K<prop>" | mod1=="K<propC13>"]
+# rtPeptide <- rtPeptide[(mod1=="M<Mox*>" | mod1=="") & modN=="NH2-"]
 
 rtPeptide[substr(modified_sequence, 1, 4) == "Ace-", test := paste0(substr(modified_sequence, 5,5),"[Ace]",substr(modified_sequence, 6, nchar(modified_sequence)))]
-rtPeptide[substr(modified_sequence, 1, 4) == "NH2-", test := substr(modified_sequence, 5,nchar(modified_sequence))]
+rtPeptide[substr(modified_sequence, 1, 4) == "NH2-", test := paste0(substr(modified_sequence, 5,5),"",substr(modified_sequence, 6, nchar(modified_sequence)))]
 rtPeptide[substr(modified_sequence, 1, 5) == "prop-", test := paste0(substr(modified_sequence, 6,6),"[prop]",substr(modified_sequence, 7, nchar(modified_sequence)))]
 rtPeptide[substr(modified_sequence, 1, 7) == "propC13-", test := paste0(substr(modified_sequence, 8,8),"[prop]",substr(modified_sequence, 9, nchar(modified_sequence)))]
 
@@ -85,7 +96,7 @@ rtPeptide <- rtPeptide[error == FALSE]
 # rtPeptide[index_rt2 <2, q50_3 := quantile(rtsec, probs = 0.50), by = c("modified_sequence")]
 
 rtPeptide <- rtPeptide[index_rt2 <2] 
-rtPeptide <- rtPeptide[, list(test, q50_2, rtsec)]
+# rtPeptide <- rtPeptide[, list(test, q50_2, rtsec)]
 
 setkey(rtPeptide, test)
 rtPeptideUnique <- unique(rtPeptide)
@@ -97,7 +108,7 @@ middle <- as.character(11:17)
 earlyCoefficient <- 1
 lateCoefficient <- 1
 middleCoefficient <- 1
-threshold <- 0.1
+threshold <- 0.15
 
 breaks <- (7:25)*100
 rtPeptideUnique[, rtCent := cut(x=q50_2, breaks=((7:25)*100), labels=7:24)]
@@ -111,7 +122,7 @@ rtPeptideUnique[early, train := (trainRand < (threshold * earlyCoefficient))]
 rtPeptideUnique[middle, train := (trainRand < (threshold * middleCoefficient))]
 rtPeptideUnique[late, train := (trainRand < (threshold * lateCoefficient))]
 
-ggplot(rtPeptideUnique[train==TRUE], aes(rtCent)) + geom_histogram()
+# ggplot(rtPeptideUnique[train==TRUE], aes(rtCent)) + geom_histogram()
 
 rtPeptideTrain <- rtPeptideUnique[train == TRUE, list(test, q50_2)]
 min_RT <- rtPeptideTrain[, min(q50_2)]
@@ -119,10 +130,22 @@ max_RT <- rtPeptideTrain[, max(q50_2)]
 rtPeptideTrain[, q50_2 := (q50_2-min_RT)/(max_RT-min_RT)]
 # modified_sequence is included because it's the key, but I suspect this kind of behavior to change, so check.
 # We want to assess the performance of the algorithm on the actual retention time observed, not the median.
+setkey(rtPeptide, test)
 rtPeptideTest <- rtPeptide[rtPeptideUnique[train == FALSE, test], rtsec]
+
+setkey(rtPeptideTestMedian, test)
+# rtPeptideTestMedian  <- rtPeptide[rtPeptideUnique[train == FALSE, sequence]][, list(sequence,q50_2)]
+# Including the training set
+# To identify in source-fragments and label them
+rtPeptideTestMedian  <- rtPeptide[rtPeptideUnique[, test]][, list(test,q50_2)]
+setkey(rtPeptideTestMedian, test)
+setkey(rtPeptide, test)
+rtPeptideTestMedian <- unique(rtPeptideTestMedian)[, list(test, q50_2)]
+
 rtPeptideTest[, rtsec := (rtsec-min_RT)/(max_RT-min_RT)]
-rtPeptideTestMedian <- unique(rtPeptide[rtPeptideUnique[train == FALSE, test], q50_2])
 rtPeptideTestMedian[, q50_2 := (q50_2-min_RT)/(max_RT-min_RT)]
+
+
 # To use with RTModel and RTPredict (OpenMS)
 rtPeptideTestRTPred <- rtPeptideTestMedian[, test]
 
@@ -144,8 +167,8 @@ write.table(rtPeptideTestRTPred, file=paste0(projectPath, "/data/rtPeptideTestRT
 projectPath <- "C:/Users/Nicolas Housset/Documents/RetentionTimeAnalysis"
 trainData <- "/data/rtPeptideTrain.txt"
 testData <- "/data/rtPeptideTestMedian.txt"
-saveModel <- "/data/modelTest.model"
-saveIndex <- "/data/retentionIndexTest.index"
+saveModel <- "/data/modelHydrophil.model"
+saveIndex <- "/data/retentionIndexHydrophil.index"
 savePredict <- "/data/predictions.out"
 
 trainData <- shQuote(paste0(projectPath, trainData))
@@ -161,14 +184,14 @@ saveModelFlag <- " -s "
 saveIndexFlag <- " -r "
 savePredictFlag <- " -o "
 testRTFlag <- " -g "
-# noInSourceFlag <- " -y "
+noInSourceFlag <- " -y "
 ignoreNewTestPTMFlag <- " -p "
 verbLevel <- " 5"
 
 eludePath <- "C:/Program Files (x86)/Elude"
 strCommand <- paste0("cd ",shQuote(eludePath), " && elude ", verbFlag, verbLevel, trainFlag, trainData, testFlag,
                      testData, saveModelFlag, saveModel, saveIndexFlag, saveIndex,
-                     savePredictFlag, savePredict, testRTFlag, ignoreNewTestPTMFlag)
+                     savePredictFlag, savePredict, testRTFlag, noInSourceFlag, ignoreNewTestPTMFlag)
 
 # elude -v 4 -t "C:\Users\Nicolas Housset\Documents\RetentionTimeAnalysis\data\rtPeptideTrain.txt" -e "C:\Users\Nicolas Housset\Documents\RetentionTimeAnalysis\data\rtPeptideTest.txt" -s "C:\Users\Nicolas Housset\Documents\RetentionTimeAnalysis\data\modelTest" -r "C:\Users\Nicolas Housset\Documents\RetentionTimeAnalysis\data\retentionIndexTest" -o "C:\Users\Nicolas Housset\Documents\RetentionTimeAnalysis\data\predictions.out" -g -p
 
@@ -176,6 +199,97 @@ strCommand <- paste0("cd ",shQuote(eludePath), " && elude ", verbFlag, verbLevel
 shell(strCommand, translate = TRUE, wait = TRUE)
 
 results <- data.table(read.table(file=paste0(projectPath, "/data/predictions.out"), header = TRUE, sep = "\t"))
+setkey(results, Peptide)
+setkey(rtPeptideTestMedian, test)
+rtPeptideTestMedian[, cpSequence := test]
+
+inSource <- results[rtPeptideTestMedian]
+inSource[, labeled := 0]
+inSource[is.na(Peptide), labeled := 1]
+
+# ELUDE tells us what are the in-source fragments
+rtPeptideTestMedian[, inSource := grepl("APLATGEDDDDEVPDLVENFDEASK", test, ignore.case = TRUE)]
+rtPeptideTestMedian[inSource==TRUE]
+
+# We bring back this information to the list of peptide
+setkey(rtPeptideUnique, test)
+setkey(inSource, cpSequence)
+rtPeptideUnique <- rtPeptideUnique[setkey(inSource[,list(cpSequence,labeled)],cpSequence)]
+
+randomPosition = as.integer(runif(NROW(rtPeptide))*nchar(test)+1)
+rtPeptide[substr(modified_sequence, 1, 4) == "NH2-", test := paste0(substr(modified_sequence, 5,5),"",substr(modified_sequence, 6, nchar(modified_sequence)))]
+rtPeptide[grepl("NH2-[ACDEFGHIKLMNPQRSTVWY]{5}[KRLIFVW]",substr(modified_sequence, 1, 10)), test := paste0(substr(modified_sequence, 5,10),"[NH2]",substr(modified_sequence, 11, nchar(modified_sequence)))]
+rtPeptide[, randomPosition := as.integer(runif(NROW(rtPeptide))*nchar(test)+1)]
+rtPeptide[, test := sub("<","[",test)]
+rtPeptide[, test := sub(">","]",test)]
+# rtPeptide[grepl("[KR]-COOH",test), test := paste0(substr(test,1,nchar(test)-5),"[COOH]")]
+rtPeptide[, test := sub("-COOH", "", test)]
+rtPeptide <- rtPeptide[!is.na(test)]
+setkey(rtPeptide, test)
+
+# test <- rtPeptideUnique[grepl("NH2-[DEKHR]",substr(modified_sequence, 1, 5))]
+rtPeptideUnique[substr(modified_sequence, 1, 4) == "NH2-", test := paste0(substr(modified_sequence, 5,5),"",substr(modified_sequence, 6, nchar(modified_sequence)))]
+rtPeptideUnique[grepl("NH2-[ACDEFGHIKLMNPQRSTVWY]{5}[KRLIFVW]",substr(modified_sequence, 1, 10)), test := paste0(substr(modified_sequence, 5,10),"[NH2]",substr(modified_sequence, 11, nchar(modified_sequence)))]
+rtPeptideUnique[, test := sub("<","[",test)]
+rtPeptideUnique[, test := sub(">","]",test)]
+# rtPeptideUnique[grepl("[KR]-COOH",test), test := paste0(substr(test,1,nchar(test)-5),"[COOH]")]
+rtPeptideUnique[, test := sub("-COOH", "", test)]
+rtPeptideUnique <- rtPeptideUnique[!is.na(test)]
+
+# We remove those in-source fragments from training and testing samples
+rtPeptideTrain <- rtPeptideUnique[train == TRUE & labeled == 0, list(test, q50_2)]
+min_RT <- rtPeptideTrain[, min(q50_2)]
+max_RT <- rtPeptideTrain[, max(q50_2)]
+rtPeptideTrain[, q50_2 := (q50_2-min_RT)/(max_RT-min_RT)]
+# modified_sequence is included because it's the key, but I suspect this kind of behavior to change, so check.
+# We want to assess the performance of the algorithm on the actual retention time observed, not the median.
+setkey(rtPeptide, test)
+rtPeptideTest <- rtPeptide[rtPeptideUnique[train == FALSE & labeled == 0, test], rtsec]
+
+rtPeptideTestMedian  <- rtPeptide[rtPeptideUnique[train == FALSE & labeled == 0, test]][, list(test,q50_2)]
+setkey(rtPeptideTestMedian, test)
+rtPeptideTestMedian <- unique(rtPeptideTestMedian)
+
+rtPeptideTest[, rtsec := (rtsec-min_RT)/(max_RT-min_RT)]
+rtPeptideTestMedian[, q50_2 := (q50_2-min_RT)/(max_RT-min_RT)]
+
+messingAround <- rtPeptideTrain[1]
+messingAround[, test := "G"]
+rtPeptideTrain <- rbind(rtPeptideTrain, messingAround)
+
+write.table(rtPeptideTrain, file=paste0(projectPath, "/data/rtPeptideTrain.txt"), quote = FALSE, sep="\t", row.names = FALSE, col.names = FALSE)
+write.table(rtPeptideTest, file=paste0(projectPath, "/data/rtPeptideTest.txt"), quote = FALSE, , sep="\t", row.names = FALSE, col.names = FALSE)
+write.table(rtPeptideTestMedian, file=paste0(projectPath, "/data/rtPeptideTestMedian.txt"), quote = FALSE, , sep="\t", row.names = FALSE, col.names = FALSE)
+write.table(rtPeptideTestRTPred, file=paste0(projectPath, "/data/rtPeptideTestRTPred.txt"), quote = FALSE, , sep="\t", row.names = FALSE, col.names = FALSE)
+
+shell(strCommand, translate = TRUE, wait = TRUE)
+
+resultsTest <- data.table(read.table(file=paste0(projectPath, "/data/predictions.out"), header = TRUE, sep = "\t"))
+
+resultsTest[, diff := Predicted_RT - Observed_RT]
+setkey(resultsTest, Observed_RT)
+
+for(i in 250:(NROW(resultsTest)-249)){
+  resultsTest[i, moving_average := resultsTest[(i-249):(i+249), mean(diff)]]
+  resultsTest[i, tmoving_average := resultsTest[(i-249):(i+249), mean(diff, trim = 0.1)]]
+  resultsTest[i, movq975 := resultsTest[(i-249):(i+249), quantile(diff, probs = 0.975)]]
+  resultsTest[i, movq025 := resultsTest[(i-249):(i+249), quantile(diff, probs = 0.025)]]
+  resultsTest[i, movq95 := movq975 - movq025]
+}
+
+ggplot(resultsTest, aes(Observed_RT, tmoving_average)) + geom_point(alpha=(1/2)) + xlim(0,1)
+ggplot(resultsTest, aes(Observed_RT, movq975)) + geom_point(alpha=(1/2)) + xlim(0,1) + ylim(-0.4,0.2)
+ggplot(resultsTest, aes(Observed_RT, movq025)) + geom_point(alpha=(1/2)) + xlim(0,1) + ylim(-0.4,0.2)
+
+ggplot(resultsTest, aes(Observed_RT, movq95)) + geom_point(alpha=(1/2)) + xlim(0,1) + ylim(0,0.5)
+# Adding modifications at random points to see how the retention index is derived ?
+# No difference : retention index is correctly computed, thus the difference with NH2 is real.
+# Difference : means that the retention index depends on the frequency of the modification.
+# I do hope there is no difference, but I need to make sure.
+
+
+aminoI <- gregexpr("I", rtPeptideUnique[,test], ignore.case = TRUE)
+aminoI[[2]]
 
 ggplot(results, aes(Predicted_RT, Observed_RT)) + geom_point(alpha=(1/2))
 ggplot(results, aes(Observed_RT, Predicted_RT - Observed_RT)) + geom_point(alpha=(1/2))
@@ -213,7 +327,7 @@ for(i in 499:(NROW(resultsTest))){
 }
 ggplot(resultsTest, aes(Observed_RT, moving_average)) + geom_point(alpha=(1/2)) + xlim(750,2500)+ylim(-400,100)
 ggplot(resultsTest, aes(Observed_RT, tmoving_average)) + geom_point(alpha=(1/2)) + xlim(750,2500)+ylim(-400,100)
-ggplot(resultsTest, aes(Observed_RT, movq95)) + geom_point(alpha=(1/2))
+ggplot(resultsTest, aes(Observed_RT, movq95)) + geom_point(alpha=(1/2)) + xlim(0,1) + ylim(0,1)
 ggplot(resultsTest, aes(Observed_RT, movq90)) + geom_point(alpha=(1/2))
 ggplot(resultsTest, aes(Observed_RT, movq50)) + geom_point(alpha=(1/2))
 
