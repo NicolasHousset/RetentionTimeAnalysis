@@ -31,4 +31,14 @@ list_runs[as.character(2210:2212), group_run := 8L]
 list_runs[as.character(2229:2243), group_run := 9L]
 list_runs[as.character(2247:2252), group_run := 10L] # Guess : only project 2250 (run 95548) is on the higher retention time
 list_runs[as.character(2253), group_run := 11L] # No contaminant on this project ? Pattern to confirm : odd high, even low
-list_runs[as.character(2263), group_run := 12L] # No contaminant on this project ? Pattern to confirm : odd high, even low
+list_runs[as.character(2263), group_run := 12L] # This one is a "very high"
+list_runs[as.character(2264:2278), group_run := 13L] # c(2265,2267,2269,2271,2273,2275,2276,2278) low, the rest high
+list_runs[as.character(2281:2283), group_run := 14L] # Jonathan having fun
+list_runs[as.character(2287:2290), group_run := 15L] # 2287 2289 low ; 2288 2290 high
+list_runs[as.character(2315:2316), group_run := 16L] # 2315 low ; 2316 high
+list_runs[as.character(c(2319,2321,2323,2325,2326,2327,2329,2331,2333,2334,2337,2338,2339,2340)), group_run := 17L] # c(2319,2323,2326,2329,2333,2337,2339) low, the rest high
+list_runs[as.character(2364), group_run := 18L] # Jonathan having fun, bis
+list_runs[as.character(2369), group_run := 19L] # Mislabeling, Rita instrument being used
+
+
+
