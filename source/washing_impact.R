@@ -17,31 +17,42 @@ projectPath <- "C:/Users/Nicolas Housset/Documents/RetentionTimeAnalysis"
 
 load(file = paste0(projectPath,"/data/identified_protocol.RData"))
 
-setkey(identified_subs, l_lcrunid)
-test <- identified_subs[as.character(93683:93706)][, list(l_projectid, l_lcrunid, sequence, modified_sequence, index_rt2, l_protocolid, grpProj, rtsec, q50_2)]
-setkey(test,l_lcrunid)
+setkey(identified_subs, l_projectid)
+test <- identified_subs[as.character(2127:2142)][, list(l_projectid, l_lcrunid, sequence, modified_sequence, index_rt2, l_protocolid, grpProj, rtsec, q50_2)]
+setkey(test,l_projectid)
+ggplot(test[as.character(2127)], aes(rtsec)) + geom_histogram(binwidth=15) + xlim(1800,2600)
 
 gradient_dt <- data.table(1:99)
-for(i in 93683:93706){
+for(i in 2127:2142){
   eval(parse(text=paste0("gradient_dt[, run_",i," := quantile(test[as.character(i)][,rtsec], probs = seq(0.01,0.99,0.01))]")))
 }
-list_var <- vector("list", 24)
-for(i in 93683:93706){
-  list_var[[i-93682]] <- paste0("run_",i)
+list_var <- vector("list", 16)
+for(i in 2127:2142){
+  list_var[[i-2126]] <- paste0("run_",i)
 }
 
 gradient_dt2 <- data.table(melt(gradient_dt, id.vars = "V1", measure.vars = as.character(list_var), variable.name = "run_id", value.name = "RT"))
 setkey(gradient_dt2, run_id)
-gradient_dt2[as.character(list_var[c(1,3,5,7,9,11,13,15,17,19,21,23)]), group_run := "odd"]
-gradient_dt2[as.character(list_var[c(2,4,6,8,10,12,14,16,18,20,22,24)]), group_run := "even"]
+gradient_dt2[as.character(list_var[c(1,3,5,7,9,11,13,15)]), group_run := "odd"]
+gradient_dt2[as.character(list_var[c(2,4,6,8,10,12,14,16)]), group_run := "even"]
 
-ggplot(gradient_dt2[as.character(list_var[c(1,3,5,7,9,11,13,15,17,19,21,23)])], aes(V1,RT, colour = run_id)) + geom_line() + xlim(30,70) + ylim(1200,1800)
-ggplot(gradient_dt2[as.character(list_var[c(2,4,6,8,10,12,14,16,18,20,22,24)])], aes(V1,RT, colour = run_id)) + geom_line() + xlim(30,70) + ylim(1200,1800)
+ggplot(gradient_dt2[as.character(list_var[c(1,3,5,7,9,11,13,15)])], aes(V1,RT, colour = run_id)) + geom_line() + xlim(30,70) + ylim(900,1600)
+ggplot(gradient_dt2[as.character(list_var[c(2,4,6,8,10,12,14,16)])], aes(V1,RT, colour = run_id)) + geom_line() + xlim(30,70) + ylim(1200,1800)
 
+setkey(gradient_dt2, group_run)
 ggplot(gradient_dt2, aes(V1,RT, colour = group_run, shape = group_run)) + geom_point(size = 1.5) + xlim(1,99) + ylim(800,2200)
 
+gradient_dt2["even", RT2 := RT - 90]
+gradient_dt2["odd", RT2 := RT]
+ggplot(gradient_dt2, aes(V1,RT2, colour = group_run, shape = group_run)) + geom_point(size = 1.5) + xlim(1,99) + ylim(800,2200)
 
+setkey(gradient_dt2, V1, group_run)
+a <- unique(gradient_dt2[, med_grp := quantile(RT, probs = 0.5), by = list(V1, group_run)])
+setkey(a, group_run)
+b <- a["odd"]
+c <- a["even"]
 
+d <- data.frame(b[, med_grp] - c[, med_grp])
 test[,quant_0.05 := quantile(rtsec, probs = 0.05),by = l_lcrunid]
 
 
