@@ -37,8 +37,13 @@ list_runs[as.character(2281:2283), group_run := 14L] # Jonathan having fun
 list_runs[as.character(2287:2290), group_run := 15L] # 2287 2289 low ; 2288 2290 high
 list_runs[as.character(2315:2316), group_run := 16L] # 2315 low ; 2316 high
 list_runs[as.character(c(2319,2321,2323,2325,2326,2327,2329,2331,2333,2334,2337,2338,2339,2340)), group_run := 17L] # c(2319,2323,2326,2329,2333,2337,2339) low, the rest high
-list_runs[as.character(2364), group_run := 18L] # Jonathan having fun, bis
+list_runs[as.character(c(2364,2370)), group_run := 18L] # Jonathan having fun, bis
 list_runs[as.character(2369), group_run := 19L] # Mislabeling, Rita instrument being used
-
+list_runs[as.character(2381:2386), group_run := 20L] # 2382, 2384 low ; 2381, 2385, 2386 high
+list_runs[as.character(2389:2390), group_run := 21L] # Jonathan having fun
+list_runs[as.character(2405:2406), group_run := 22L] # odd lcrun high rt, even lcrun lower rt (doesn't explain all the runs, some might be screwed)
+list_runs[as.character(2414:2415), group_run := 23L] # 2414 low rt, 2415 high rt
+list_runs[as.character(2446:2447), group_run := 24L] # Very high, Jonathan having fun
+list_runs[as.character(2458:2461), group_run := 25L] # 2459 low, 2458 and 2460 high, 2461 very high (screwed)
 
 
