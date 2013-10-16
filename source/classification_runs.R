@@ -45,5 +45,17 @@ list_runs[as.character(2405:2406), group_run := 22L] # odd lcrun high rt, even l
 list_runs[as.character(2414:2415), group_run := 23L] # 2414 low rt, 2415 high rt
 list_runs[as.character(2446:2447), group_run := 24L] # Very high, Jonathan having fun
 list_runs[as.character(2458:2461), group_run := 25L] # 2459 low, 2458 and 2460 high, 2461 very high (screwed)
+list_runs[as.character(2477), group_run := 26L] # Odd high, even low
+list_runs[as.character(2479:2480), group_run := 27L] # 2479 low, 2480 high, but shift seems to depend on rt
+list_runs[as.character(2511:2514), group_run := 28L] # for the 3 projects: odd low, even high, exclude 96871 and 96872 
+list_runs[as.character(2520:2525), group_run := 29L] # 2520, 2522, 2525 high ; 2521, 2523, 2524 low
+list_runs[as.character(2532), group_run := 30L] # Odd high, even low
+list_runs[as.character(2535), group_run := 31L] # Even high, odd low
+list_runs[as.character(2537:2538), group_run := 32L] # No difference between both, classified as low (anticipation that high will be brought to low)
+list_runs[as.character(2544:2548), group_run := 33L] # Exclude 2545 (Kevin having fun :p), rest is low
+list_runs[as.character(2558:2559), group_run := 34L] # Even high, odd low (reverse for 97644:97647 and 97650:97651  )
+list_runs[as.character(2560:2563), group_run := 35L] # Odd high, even low (for LC_RUN numbers, trouble with project numbers...)
+list_runs[as.character(2570:2571), group_run := 36L] # 2570 low, 2571 high
+list_runs[as.character(2572), group_run := 37L] # even high, odd low
 
 
